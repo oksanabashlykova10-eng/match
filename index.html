@@ -7,7 +7,7 @@
     <style>
         :root {
             --n-green: #39FF14; --n-dark: #004d00; --n-red: #ff003c;
-            --bg: #050805; --plate-bg: rgba(21, 26, 21, 0.9);
+            --bg: transparent; --plate-bg: rgba(21, 26, 21, 0.9);
             --h-font: 'Cormorant SC'; --h-color: #39FF14; --h-size: 32px;
             --h-bg: transparent; --h-border: transparent; --h-b-width: 0px; --h-radius: 0px;
             --p-font: 'Exo 2'; --p-text-color: #aaa; --p-border: #333; --p-font-size: 16px; --p-b-width: 1px;
@@ -21,7 +21,8 @@
             --win-bg: rgba(0,0,0,0.85); --win-color: #39FF14; --win-font: 'Cinzel Decorative'; --win-size: 50px;
         }
 
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: 'Exo 2', sans-serif; overflow: hidden; display: flex; }
+        /* Системный фон сделан прозрачным для интеграции в Genially */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; color: white; font-family: 'Exo 2', sans-serif; overflow: hidden; display: flex; }
 
         /* Режим игры скрывает редактор */
         body.play-mode #sidebar { display: none !important; }
@@ -78,7 +79,7 @@
         /* Дизайн плашек */
         .plate { 
             font-family: var(--p-font); background: var(--plate-bg); padding: 12px; 
-            border: var(--p-b-width) solid #333; /* В покое рамка серая */
+            border: var(--p-b-width) solid #333; 
             border-radius: 4px; cursor: pointer; transition: 0.3s; text-align: center; 
             font-size: var(--p-font-size); color: var(--p-text-color); box-shadow: none;
         }
@@ -300,7 +301,7 @@ Sarcophagus | Upload Station</textarea>
         <div class="group">
             <h3>Главный Фон Игры</h3>
             <label>Цвет заливки и Прозрачность слоя (0-100):</label>
-            <p class="hint">(Если прозрачность 0, цвет фона не будет виден)</p>
+            <p class="hint">(0 - полностью прозрачный фон для интеграции в Genially, 100 - сплошной цвет)</p>
             <div class="row"><input type="color" id="bg-color-val" class="color-pick" value="#050805" onchange="liveUpdate()"><input type="number" id="bg-alpha-val" value="100" oninput="liveUpdate()"></div>
             <label>Фоновая Картинка (URL):</label>
             <input type="text" id="bg-img-url" placeholder="URL картинки фона" oninput="liveUpdate()">
@@ -408,7 +409,7 @@ Sarcophagus | Upload Station</textarea>
         } catch(e) { console.error("Ошибка загрузки конфига", e); }
     }
 
-    // Экспорт №1: Iframe для Genially
+    // Экспорт №1: Iframe для Genially (с разрешением прозрачности)
     function generateIframe() {
         const config = saveConfig();
         const jsonStr = JSON.stringify(config);
@@ -421,7 +422,7 @@ Sarcophagus | Upload Station</textarea>
         const fullUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/') + '#play=' + urlSafeBase64;
         
         const maskedUrl = fullUrl.split('').map(c => '&#' + c.charCodeAt(0) + ';').join('');
-        const iframeCode = `<iframe src="${maskedUrl}" style="width: 100%; height: 100%; border: none; background: transparent;" allow="autoplay"></iframe>`;
+        const iframeCode = `<iframe src="${maskedUrl}" style="width: 100%; height: 100%; border: none; background: transparent;" allow="autoplay" allowtransparency="true"></iframe>`;
         
         const out = document.getElementById('export-output');
         out.value = iframeCode;
@@ -650,7 +651,7 @@ Sarcophagus | Upload Station</textarea>
                     document.getElementById('disk-svg').style.transform = 'rotate(630deg)';
                     document.getElementById('d-img-asset').style.transform = 'rotate(720deg)';
                     setTimeout(() => { document.querySelectorAll('.disk-seg').forEach(s => s.style.opacity = '0'); }, 1500);
-                    setTimeout(() => { document.getElementById('win-screen').classList.add('show'); }, 3000);
+                    setTimeout(() => { document.getElementById('win-screen').classList.add('show'); }, 4000); // 4 секунды задержки
                 }
             }, 1000);
         } else {
@@ -678,7 +679,13 @@ Sarcophagus | Upload Station</textarea>
         if(type === 'tap') { osc.frequency.setValueAtTime(800, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.start(); osc.stop(now + 0.1); }
         else if(type === 'win') { osc.frequency.setValueAtTime(500, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.6); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6); osc.start(); osc.stop(now + 0.6); }
         else if(type === 'fail') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); osc.start(); osc.stop(now + 0.4); }
-        else if(type === 'final') { osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(2000, now + 2); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5); osc.start(); osc.stop(now + 2.5); }
+        else if(type === 'final') { 
+            osc.type = 'square'; osc.frequency.setValueAtTime(300, now); 
+            osc.frequency.exponentialRampToValueAtTime(2000, now + 3); 
+            gain.gain.setValueAtTime(0.4, now); // Стартовая громкость в 8 раз больше (было 0.05)
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 3.5); 
+            osc.start(); osc.stop(now + 3.5); 
+        }
     }
 
     function resizeCanvas() { canvas.width = stage.clientWidth; canvas.height = stage.clientHeight; }
